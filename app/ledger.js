@@ -66,7 +66,7 @@ const appStore = require('../js/stores/appStore')
 const eventStore = require('../js/stores/eventStore')
 const rulesolver = require('./extensions/brave/content/scripts/pageInformation')
 const ledgerUtil = require('./common/lib/ledgerUtil')
-const Tabs = require('./browser/tabs')
+const tabs = require('./browser/tabs')
 const {fileUrl} = require('../js/lib/appUrlUtil')
 
 // "only-when-needed" loading...
@@ -316,7 +316,7 @@ var backupKeys = (appState, action) => {
     if (err) {
       console.log(err)
     } else {
-      Tabs.create({url: fileUrl(filePath)}, (webContents) => {
+      tabs.create({url: fileUrl(filePath)}, (webContents) => {
         if (action.backupAction === 'print') {
           webContents.print({silent: false, printBackground: false})
         } else {
@@ -503,7 +503,7 @@ if (ipc) {
   })
 
   ipc.on(messages.NOTIFICATION_RESPONSE, (e, message, buttonIndex) => {
-    const win = electron.BrowserWindow.getFocusedWindow()
+    const win = electron.BrowserWindow.getActiveWindow()
     if (message === addFundsMessage) {
       appActions.hideMessageBox(message)
       // See showNotificationAddFunds() for buttons.
@@ -511,12 +511,12 @@ if (ipc) {
       // in showNotificationAddFunds() when triggering this notification.
       if (buttonIndex === 0) {
         appActions.changeSetting(settings.PAYMENTS_NOTIFICATIONS, false)
-      } else if (buttonIndex === 2) {
+      } else if (buttonIndex === 2 && win) {
         // Add funds: Open payments panel
-        if (win) {
-          win.webContents.send(messages.SHORTCUT_NEW_FRAME,
-            'about:preferences#payments', { singleFrame: true })
-        }
+        appActions.maybeCreateTabRequested({
+          url: 'about:preferences#payments',
+          windowId: win.id
+        })
       }
     } else if (message === reconciliationMessage) {
       appActions.hideMessageBox(message)
@@ -524,8 +524,10 @@ if (ipc) {
       if (buttonIndex === 0) {
         appActions.changeSetting(settings.PAYMENTS_NOTIFICATIONS, false)
       } else if (buttonIndex === 2 && win) {
-        win.webContents.send(messages.SHORTCUT_NEW_FRAME,
-          'about:preferences#payments', { singleFrame: true })
+        appActions.maybeCreateTabRequested({
+          url: 'about:preferences#payments',
+          windowId: win.id
+        })
       }
     } else if (message === notificationPaymentDoneMessage) {
       appActions.hideMessageBox(message)
@@ -535,8 +537,10 @@ if (ipc) {
     } else if (message === notificationTryPaymentsMessage) {
       appActions.hideMessageBox(message)
       if (buttonIndex === 1 && win) {
-        win.webContents.send(messages.SHORTCUT_NEW_FRAME,
-          'about:preferences#payments', { singleFrame: true })
+        appActions.maybeCreateTabRequested({
+          url: 'about:preferences#payments',
+          windowId: win.id
+        })
       }
       appActions.changeSetting(settings.PAYMENTS_NOTIFICATION_TRY_PAYMENTS_DISMISSED, true)
     }
