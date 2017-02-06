@@ -523,13 +523,22 @@
       position: absolute;
       top: 50%; left: 40%;
       border: .5px solid #FFF;
+
+        &.center {
+          left: 50%;
+          transform: translateX(-50%);
+          max-width: calc(100% - 5px);
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
     }
 
     .extensionButton {
       -webkit-app-region: no-drag;
       background-size: contain;
       height: 17px;
-      margin: 4px 4px 0 0;
+      margin: 4px 0 0 0;
       opacity: 0.85;
     }
 

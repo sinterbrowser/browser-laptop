@@ -6,8 +6,27 @@ const React = require('react')
 const ImmutableComponent = require('../../../js/components/immutableComponent')
 
 class BrowserActionBadge extends ImmutableComponent {
+  constructor () {
+    super()
+    this.determineLayout = this.determineLayout.bind(this)
+  }
+
+  determineLayout () {
+    const verb = this.refs.badge.offsetWidth > 20 ? 'add' : 'remove'
+    this.refs.badge.classList[verb]('center')
+  }
+
+  componentDidMount () {
+    this.determineLayout()
+  }
+
+  componentDidUpdate () {
+    this.determineLayout()
+  }
+
   render () {
     return <div
+      ref='badge'
       className='browserActionBadge'
       style={{backgroundColor: this.props.color}}
       >{this.props.text}</div>
