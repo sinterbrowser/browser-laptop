@@ -546,13 +546,21 @@ describe('siteUtil', function () {
       it('deletes a history entry (has no tags)', function () {
         const siteDetail = {
           tags: [],
-          location: testUrl1
+          location: testUrl1,
+          lastAccessedTime: 123
+        }
+        const expectedSites = {
+          'https://brave.com/|0|0': {
+            tags: [],
+            location: testUrl1,
+            lastAccessedTime: undefined
+          }
         }
         const siteKey = siteUtil.getSiteKey(Immutable.fromJS(siteDetail))
         let sites = {}
         sites[siteKey] = siteDetail
         const processedSites = siteUtil.removeSite(Immutable.fromJS(sites), Immutable.fromJS(siteDetail))
-        assert.deepEqual(processedSites, Immutable.fromJS({}))
+        assert.deepEqual(processedSites.toJS(), expectedSites)
       })
     })
   })
@@ -954,7 +962,8 @@ describe('siteUtil', function () {
         tags: [siteTags.BOOKMARK]
       })
       const siteDetail2 = Immutable.fromJS({
-        tags: [siteTags.BOOKMARK_FOLDER]
+        tags: [siteTags.BOOKMARK_FOLDER],
+        folderId: 1
       })
       assert.equal(siteUtil.isEquivalent(siteDetail1, siteDetail2), false)
     })
@@ -996,11 +1005,18 @@ describe('siteUtil', function () {
   })
 
   describe('isFolder', function () {
-    it('returns true if the input is a siteDetail and has a `BOOKMARK_FOLDER` tag', function () {
+    it('returns true if the input is a siteDetail and has a `BOOKMARK_FOLDER` tag and a folder ID', function () {
+      const siteDetail = Immutable.fromJS({
+        tags: [siteTags.BOOKMARK_FOLDER],
+        folderId: 1
+      })
+      assert.equal(siteUtil.isFolder(siteDetail), true)
+    })
+    it('returns false if the input does not have a folderId', function () {
       const siteDetail = Immutable.fromJS({
         tags: [siteTags.BOOKMARK_FOLDER]
       })
-      assert.equal(siteUtil.isFolder(siteDetail), true)
+      assert.equal(siteUtil.isFolder(siteDetail), false)
     })
     it('returns false if the input does not have a `BOOKMARK_FOLDER` tag', function () {
       const siteDetail = Immutable.fromJS({

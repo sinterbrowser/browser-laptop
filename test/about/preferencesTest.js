@@ -25,16 +25,35 @@ describe('General Panel', function () {
       yield setup(this.app.client)
     })
 
-    it.skip('homepage displays punycode', function * () {
+    it('homepage displays punycode', function * () {
       yield this.app.client
         .tabByIndex(0)
         .loadUrl(prefsUrl)
         .waitForVisible(homepageInput)
         .click(homepageInput)
+        .keys('\uE010') // send END key
         .keys('а')
         .waitUntil(function () {
           return this.getValue(homepageInput).then((val) => {
-            return val === 'https://www.brave.xn--com-7cd'
+            return val === 'https://www.brave.xn--com-8cd'
+          })
+        })
+    })
+    it('homepage can be backspaced', function * () {
+      yield this.app.client
+        .tabByIndex(0)
+        .loadUrl(prefsUrl)
+        .waitForVisible(homepageInput)
+        .click(homepageInput)
+        .keys('\uE010') // send END key
+        .keys('/')
+        .keys('1')
+        .keys(Brave.keys.BACKSPACE)
+        .keys(Brave.keys.BACKSPACE)
+        .keys(Brave.keys.BACKSPACE)
+        .waitUntil(function () {
+          return this.getValue(homepageInput).then((val) => {
+            return val === 'https://www.brave.co'
           })
         })
     })

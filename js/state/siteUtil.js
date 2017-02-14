@@ -255,6 +255,9 @@ module.exports.addSite = function (sites, siteDetail, tag, originalSiteDetail) {
  */
 module.exports.removeSite = function (sites, siteDetail, tag, reorder = true) {
   const key = module.exports.getSiteKey(siteDetail)
+  if (!key) {
+    return sites
+  }
 
   const tags = sites.getIn([key, 'tags'])
   if (isBookmarkFolder(tags)) {
@@ -267,12 +270,18 @@ module.exports.removeSite = function (sites, siteDetail, tag, reorder = true) {
       })
     })
   }
-  if (sites.size && reorder) {
-    const order = sites.getIn([key, 'order'])
-    sites = reorderSite(sites, order)
-  }
+  if (isBookmark(tag)) {
+    if (sites.size && reorder) {
+      const order = sites.getIn([key, 'order'])
+      sites = reorderSite(sites, order)
+    }
 
-  return sites.delete(key)
+    return sites.delete(key)
+  } else {
+    let site = sites.get(key)
+    site = site.set('lastAccessedTime', undefined)
+    return sites.set(key, site)
+  }
 }
 
 /**
@@ -503,7 +512,7 @@ module.exports.isBookmark = function (siteDetail) {
  */
 module.exports.isFolder = function (siteDetail) {
   if (siteDetail) {
-    return isBookmarkFolder(siteDetail.get('tags'))
+    return isBookmarkFolder(siteDetail.get('tags')) && siteDetail.get('folderId') !== undefined
   }
   return false
 }
@@ -527,7 +536,7 @@ module.exports.isHistoryEntry = function (siteDetail) {
     if (siteDetail.get('location').startsWith('about:')) {
       return false
     }
-    return !!siteDetail.get('lastAccessedTime') && !module.exports.isFolder(siteDetail)
+    return !!siteDetail.get('lastAccessedTime') && !isBookmarkFolder(siteDetail.get('tags'))
   }
   return false
 }
@@ -538,7 +547,7 @@ module.exports.isHistoryEntry = function (siteDetail) {
 module.exports.getFolders = function (sites, folderId, parentId, labelPrefix) {
   parentId = parentId || 0
   let folders = []
-  sites.forEach((site) => {
+  sites.toList().sort(module.exports.siteSort).forEach((site) => {
     if ((site.get('parentFolderId') || 0) === parentId && module.exports.isFolder(site)) {
       if (site.get('folderId') === folderId) {
         return

@@ -12,6 +12,7 @@ const KeyCodes = require('../../common/constants/keyCodes')
 const siteTags = require('../../../js/constants/siteTags')
 const settings = require('../../../js/constants/settings')
 const siteUtil = require('../../../js/state/siteUtil')
+const UrlUtil = require('../../../js/lib/urlutil')
 const getSetting = require('../../../js/settings').getSetting
 
 class AddEditBookmarkHanger extends ImmutableComponent {
@@ -53,7 +54,9 @@ class AddEditBookmarkHanger extends ImmutableComponent {
       : 'bookmarkAdded'
   }
   get isFolder () {
-    return siteUtil.isFolder(this.props.currentDetail)
+    // Fake a folderId property so that the bookmark is considered a bookmark folder.
+    // This is ImmutableJS so it doesn't actually set a value, it just returns a new one.
+    return siteUtil.isFolder(this.props.currentDetail.set('folderId', 0))
   }
   setDefaultFocus () {
     this.bookmarkName.select()
@@ -95,15 +98,29 @@ class AddEditBookmarkHanger extends ImmutableComponent {
   }
   onNameChange (e) {
     let currentDetail = this.props.currentDetail
-    if (currentDetail.get('title') === e.target.value && e.target.value) {
+    let name = e.target.value
+    if (typeof name === 'string' && UrlUtil.isURL(name)) {
+      const punycodeUrl = UrlUtil.getPunycodeUrl(name)
+      if (punycodeUrl.replace(/\/$/, '') !== name) {
+        name = punycodeUrl
+      }
+    }
+    if (currentDetail.get('title') === name && name) {
       currentDetail = currentDetail.delete('customTitle')
     } else {
-      currentDetail = currentDetail.set('customTitle', e.target.value)
+      currentDetail = currentDetail.set('customTitle', name)
     }
     windowActions.setBookmarkDetail(currentDetail, this.props.originalDetail, this.props.destinationDetail, this.props.shouldShowLocation, !this.props.isModal)
   }
   onLocationChange (e) {
-    const currentDetail = this.props.currentDetail.set('location', e.target.value)
+    let location = e.target.value
+    if (typeof location === 'string') {
+      const punycodeUrl = UrlUtil.getPunycodeUrl(location)
+      if (punycodeUrl.replace(/\/$/, '') !== location) {
+        location = punycodeUrl
+      }
+    }
+    const currentDetail = this.props.currentDetail.set('location', location)
     windowActions.setBookmarkDetail(currentDetail, this.props.originalDetail, this.props.destinationDetail, this.props.shouldShowLocation, !this.props.isModal)
   }
   onParentFolderChange (e) {

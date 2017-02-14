@@ -9,6 +9,7 @@ const rscheme = /^(?:[a-z\u00a1-\uffff0-9-+]+)(?::(\/\/)?)(?!\d)/i
 const defaultScheme = 'http://'
 const fileScheme = 'file://'
 const os = require('os')
+const punycode = require('punycode')
 const urlParse = require('../../app/common/urlParse')
 const urlFormat = require('url').format
 const pdfjsExtensionId = require('../constants/config').PDFJSExtensionId
@@ -333,6 +334,16 @@ const UrlUtil = {
       return loc.protocol + '//' + loc.host + '/favicon.ico'
     }
     return ''
+  },
+
+  getPunycodeUrl: function (url) {
+    try {
+      const parsed = urlParse(url)
+      parsed.hostname = punycode.toASCII(parsed.hostname)
+      return urlFormat(parsed)
+    } catch (e) {
+      return url
+    }
   }
 }
 

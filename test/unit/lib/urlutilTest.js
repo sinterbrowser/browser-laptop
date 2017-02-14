@@ -261,4 +261,13 @@ describe('urlutil', function () {
       assert.equal(UrlUtil.getDefaultFaviconUrl('https://brave.com:8080'), 'https://brave.com:8080/favicon.ico')
     })
   })
+
+  describe('getPunycodeUrl', function () {
+    it('returns empty string if input is not a URL', function () {
+      assert.equal(UrlUtil.getPunycodeUrl('invalid-url-goes-here'), 'invalid-url-goes-here')
+    })
+    it('returns the punycode URL when given a valid URL', function () {
+      assert.equal(UrlUtil.getPunycodeUrl('http://brave:brave@ebаy.com:1234/brave#brave'), 'http://brave:brave@xn--eby-7cd.com:1234/brave#brave')
+    })
+  })
 })
