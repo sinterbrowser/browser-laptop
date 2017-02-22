@@ -303,7 +303,7 @@ function registerForHeadersReceived (session, partition) {
         continue
       }
       if (results.responseHeaders) {
-        cb({responseHeaders: results.responseHeaders})
+        cb({ responseHeaders: results.responseHeaders, statusLine: results.statusLine })
         return
       }
     }
