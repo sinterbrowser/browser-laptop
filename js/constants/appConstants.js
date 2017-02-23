@@ -41,6 +41,7 @@ const appConstants = {
   APP_IMPORT_BROWSER_DATA: _,
   APP_UPDATE_LEDGER_INFO: _,
   APP_LEDGER_RECOVERY_STATUS_CHANGED: _,
+  APP_UPDATE_LOCATION_INFO: _,
   APP_UPDATE_PUBLISHER_INFO: _,
   APP_SHOW_MESSAGE_BOX: _, /** @param {Object} detail */
   APP_HIDE_MESSAGE_BOX: _, /** @param {string} message */

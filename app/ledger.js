@@ -253,14 +253,6 @@ var quit = () => {
   visit('NOOP', underscore.now(), null)
   clearInterval(doneTimer)
   doneWriter()
-  if (v2RulesetDB) {
-    v2RulesetDB.close()
-    v2RulesetDB = null
-  }
-  if (v2PublishersDB) {
-    v2PublishersDB.close()
-    v2PublishersDB = null
-  }
 }
 
 var boot = () => {
@@ -580,7 +572,11 @@ eventStore.addChangeListener(() => {
     var entry, faviconURL, pattern, publisher
     var location = page.url
 
-    if ((location.match(/^about/)) || ((locations[location]) && (locations[location].publisher))) return
+    if (location.match(/^about/)) return
+
+    location = urlFormat(underscore.pick(urlParse(location), [ 'protocol', 'host', 'hostname', 'port', 'pathname' ]))
+    publisher = locations[location] && locations[location].publisher
+    if (publisher) return updateLocation(location, publisher)
 
     if (!page.publisher) {
       try {
@@ -591,7 +587,7 @@ eventStore.addChangeListener(() => {
         console.log('getPublisher error for ' + location + ': ' + ex.toString())
       }
     }
-    locations[location] = underscore.omit(page, [ 'url' ])
+    locations[location] = underscore.omit(page, [ 'url', 'protocol', 'faviconURL' ])
     if (!page.publisher) return
 
     publisher = page.publisher
@@ -604,6 +600,7 @@ eventStore.addChangeListener(() => {
         updatePublisherInfo()
       })
     }
+    updateLocation(location, publisher)
     entry = synopsis.publishers[publisher]
     if ((page.protocol) && (!entry.protocol)) entry.protocol = page.protocol
 
@@ -868,12 +865,38 @@ var enable = (paymentsEnabled) => {
           entries.forEach((entry) => {
             locations[entry.location] = entry
             publishers[publisher][entry.location] = { timestamp: entry.when, tabIds: [] }
+            updateLocation(entry.location, publisher)
           })
         })
       } catch (ex) {
         console.log('publishersPath parse error: ' + ex.toString())
       }
     })
+  })
+}
+
+/*
+ * update location information
+ */
+
+var updateLocationInfo = (location) => {
+  appActions.updateLocationInfo(locations)
+}
+
+var updateLocation = (location, publisher) => {
+  if (typeof locations[location].stickyP === 'undefined') locations[location].stickyP = stickyP(publisher)
+  if (typeof locations[location].verified !== 'undefined') return
+
+  if (synopsis && synopsis.publishers[publisher] && (typeof synopsis.publishers[publisher].options.verified !== 'undefined')) {
+    locations[location].verified = synopsis.publishers[publisher].options.verified || false
+    return updateLocationInfo(location)
+  }
+
+  verifiedP(publisher, (err, result) => {
+    if ((err) && (!err.notFound)) return
+
+    locations[location].verified = (result && result.verified) || false
+    updateLocationInfo(location)
   })
 }
 
