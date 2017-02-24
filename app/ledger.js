@@ -898,6 +898,18 @@ var updateLocation = (location, publisher) => {
     locations[location].verified = (result && result.verified) || false
     updateLocationInfo(location)
   })
+
+  if (synopsis && synopsis.publishers[publisher] && (typeof synopsis.publishers[publisher].options.exclude !== 'undefined')) {
+    locations[location].exclude = synopsis.publishers[publisher].options.exclude || false
+    return updateLocationInfo(location)
+  }
+
+  excludeP(publisher, (err, result) => {
+    if ((err) && (!err.notFound)) return
+
+    locations[location].exclude = (result && result.exclude) || false
+    updateLocationInfo(location)
+  })
 }
 
 /*

@@ -344,6 +344,34 @@ const UrlUtil = {
     } catch (e) {
       return url
     }
+  },
+
+  /**
+   * Gets the path from an URL.
+   * @param {string} url The URL to get the path from
+   * @return {string} url The URL without the querystring
+   */
+  getPathFromUrl: function (url) {
+    return url.split(/[?#]/)[0]
+  },
+
+  /**
+   * Gets the hostPattern from an URL.
+   * @param {string} url The URL to get the hostPattern from
+   * @return {string} url The URL formmatted as an hostPattern
+   */
+  getHostPattern: function (url) {
+    const pattern = url.replace(/http:|https:/g, 'https?:')
+    return pattern.split('/').slice(0, 3).join('/')
+  },
+
+  /**
+   * Checks if URL is based on http protocol.
+   * @param {string} url The URL to get the hostPattern from
+   * @return {string} url The URL formmatted as an hostPattern
+   */
+  isHttpOrHttps: function (url) {
+    return url.startsWith('https://') || url.startsWith('http://')
   }
 }
 

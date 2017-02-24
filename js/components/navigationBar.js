@@ -5,7 +5,6 @@
 const React = require('react')
 const Immutable = require('immutable')
 const ImmutableComponent = require('./immutableComponent')
-const tldjs = require('tldjs')
 
 const cx = require('../lib/classSet')
 const Button = require('./button')
@@ -111,14 +110,17 @@ class NavigationBar extends ImmutableComponent {
       getSetting(settings.DISABLE_TITLE_MODE) === false
   }
 
-  get isPublisherButtonEnabled () {
-    const domain = tldjs.getDomain(this.props.location)
-    const hostSettings = this.props.siteSettings.get(`https?://${domain}`)
-    const visiblePublisher = hostSettings && hostSettings.get('ledgerPaymentsShown')
-    const validPublisherSynopsis = this.props.synopsis.map(entry => entry.get('site')).includes(domain)
+  get visiblePublisher () {
+    const hostPattern = UrlUtil.getHostPattern(this.publisherId)
+    const hostSettings = this.props.siteSettings.get(hostPattern)
+    return hostSettings && hostSettings.get('ledgerPaymentsShown') !== false
+  }
 
-    if ((hostSettings || validPublisherSynopsis) && visiblePublisher !== false) {
-      return getSetting(settings.PAYMENTS_ENABLED) && !isSourceAboutUrl(this.props.location)
+  get shouldShowAddPublisherButton () {
+    // Don't show addFunds option for unmatching protocols
+    // and for permanently hidden websites
+    if (UrlUtil.isHttpOrHttps(this.props.location) && this.visiblePublisher) {
+      return getSetting(settings.PAYMENTS_ENABLED)
     }
     return false
   }
@@ -234,9 +236,10 @@ class NavigationBar extends ImmutableComponent {
         : <div className='endButtons'>
           {
             <PublisherToggle
-              url={this.props.location}
-              hostSettings={this.props.siteSettings}
+              location={this.props.location}
+              siteSettings={this.props.siteSettings}
               synopsis={this.props.synopsis}
+              locationInfo={this.props.locationInfo}
             />
           }
           {

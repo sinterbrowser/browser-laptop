@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const React = require('react')
-const tldjs = require('tldjs')
 const ImmutableComponent = require('../../../js/components/immutableComponent')
 const appActions = require('../../../js/actions/appActions')
 const settings = require('../../../js/constants/settings')
@@ -11,6 +10,7 @@ const getSetting = require('../../../js/settings').getSetting
 const {StyleSheet, css} = require('aphrodite')
 const globalStyles = require('./styles/global')
 const commonStyles = require('./styles/commonStyles')
+const {getPathFromUrl, getHostPattern, isHttpOrHttps} = require('../../../js/lib/urlutil')
 
 const noFundVerifiedPublisherImage = require('../../extensions/brave/img/urlbar/browser_URL_fund_no_verified.svg')
 const fundVerifiedPublisherImage = require('../../extensions/brave/img/urlbar/browser_URL_fund_yes_verified.svg')
@@ -24,21 +24,12 @@ class PublisherToggle extends ImmutableComponent {
   }
 
   get publisherId () {
-// @cezaraugusto: publisherIds aren't limited to a domain name
-// when this runs, do you think that app/extensions/brave/content/scripts/pageInformation.js has already run?
-
-    return tldjs.getDomain(this.props.url)
-  }
-
-  get hostPattern () {
-    return `https?://${this.publisherId}`
+    return getPathFromUrl(this.props.location)
   }
 
   get hostSettings () {
-    // hostPattern defines it's own identifier for authorized publishers
-    // sites that do not match criteria would populate siteSettings
-    // with their default protocol, not hostPattern
-    return this.props.hostSettings.get(this.hostPattern)
+    const hostPattern = getHostPattern(this.publisherId)
+    return this.props.siteSettings.get(hostPattern)
   }
 
   get validPublisherSynopsis () {
@@ -47,26 +38,20 @@ class PublisherToggle extends ImmutableComponent {
     return this.props.synopsis.map(entry => entry.get('site')).includes(this.publisherId)
   }
 
-  get authorizedPublisher () {
-    // If we can't get ledgerPayments, then it's likely that we are
-    // on a clean session. Let's then check for publisher's synopsis
-    return this.hostSettings
-      ? this.hostSettings.get('ledgerPayments') !== false
-      : this.validPublisherSynopsis
+  get enabledForPaymentsPublisher () {
+    // Excluded publisher is defined as a publisher set as disabled by default,
+    // based on exclusion list under ledger database
+    const excluded = this.props.locationInfo.getIn([this.publisherId, 'exclude'])
+    const autoSuggestSites = getSetting(settings.AUTO_SUGGEST_SITES)
+    // hostSettings is undefined until user hit addFunds button.
+    // For such cases check autoSuggestSites for eligibility.
+    const enabledForPayments = this.hostSettings ? this.hostSettings.get('ledgerPayments') !== false : autoSuggestSites
+
+    return !excluded && (enabledForPayments || this.validPublisherSynopsis)
   }
 
   get verifiedPublisher () {
-// @cezaraugusto: should call `verifiedP` in ledger.js and return the 2nd parameter of the callback
-
-    let verifiedPublisher
-    this.props.synopsis.map(publisher => {
-      if (publisher.get('site') === this.publisherId && publisher.get('verified') === true) {
-        verifiedPublisher = !!publisher
-        return false
-      }
-      return true
-    })
-    return verifiedPublisher
+    return this.props.locationInfo.getIn([this.publisherId, 'verified'])
   }
 
   get visiblePublisher () {
@@ -77,43 +62,44 @@ class PublisherToggle extends ImmutableComponent {
   }
 
   get shouldShowAddPublisherButton () {
-    if ((!!this.hostSettings || !!this.validPublisherSynopsis) && this.visiblePublisher) {
-      // Only show publisher icon if ledger is enabled
+    // Don't show addFunds option for unmatching protocols
+    // and for permanently hidden websites
+    if (isHttpOrHttps(this.props.location) && this.visiblePublisher) {
       return getSetting(settings.PAYMENTS_ENABLED)
     }
     return false
   }
 
   get l10nString () {
-    if (this.verifiedPublisher && !this.authorizedPublisher) {
-      return 'verifiedPublisher'
-    } else if (this.authorizedPublisher) {
-      return 'enabledPublisher'
+    let l10nData = 'disabledPublisher'
+    if (this.verifiedPublisher && !this.enabledForPaymentsPublisher) {
+      l10nData = 'verifiedPublisher'
+    } else if (this.enabledForPaymentsPublisher) {
+      l10nData = 'enabledPublisher'
     }
-    return 'disabledPublisher'
+    return l10nData
   }
 
   onAuthorizePublisher () {
-    this.authorizedPublisher
-      ? appActions.changeSiteSetting(this.hostPattern, 'ledgerPayments', false)
-      : appActions.changeSiteSetting(this.hostPattern, 'ledgerPayments', true)
+    const hostPattern = getHostPattern(this.publisherId)
+    appActions.changeSiteSetting(hostPattern, 'ledgerPayments', !this.enabledForPaymentsPublisher)
   }
 
   render () {
     return this.shouldShowAddPublisherButton
       ? <span
         data-test-id='publisherButton'
-        data-test-authorized={this.authorizedPublisher}
+        data-test-authorized={this.enabledForPaymentsPublisher}
         data-test-verified={this.verifiedPublisher}
         className={css(styles.addPublisherButtonContainer)}>
         <button
           className={
           css(
             commonStyles.browserButton,
-            !this.authorizedPublisher && this.verifiedPublisher && styles.noFundVerified,
-            this.authorizedPublisher && this.verifiedPublisher && styles.fundVerified,
-            !this.authorizedPublisher && !this.verifiedPublisher && styles.noFundUnverified,
-            this.authorizedPublisher && !this.verifiedPublisher && styles.fundUnverified
+            !this.enabledForPaymentsPublisher && this.verifiedPublisher && styles.noFundVerified,
+            this.enabledForPaymentsPublisher && this.verifiedPublisher && styles.fundVerified,
+            !this.enabledForPaymentsPublisher && !this.verifiedPublisher && styles.noFundUnverified,
+            this.enabledForPaymentsPublisher && !this.verifiedPublisher && styles.fundUnverified
             )
           }
           data-l10n-id={this.l10nString}
