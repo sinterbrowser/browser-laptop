@@ -162,7 +162,6 @@
     "muon-winstaller": "^2.5.4",
     "ncp": "^2.0.0",
     "node-gyp": "^3.2.1",
-    "node-libs-browser": "^1.0.0",
     "node-static": "^0.7.7",
     "node-uuid": "^1.4.7",
     "nsp": "^2.2.0",
@@ -176,7 +175,7 @@
     "style-loader": "^0.13.0",
     "uglify-js": "https://github.com/mishoo/UglifyJS2#harmony",
     "webdriverio": "4.2.5",
-    "webpack": "^1.12.9",
+    "webpack": "https://github.com/feross/webpack#webpack-1",
     "webpack-dev-server": "^1.14.0",
     "webpack-notifier": "^1.2.1",
     "xml2js": "^0.4.15"

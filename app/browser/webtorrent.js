@@ -65,7 +65,7 @@ function setupFiltering () {
 
     return {
       responseHeaders: {
-        'Location': viewerUrl
+        'Location': [ viewerUrl ]
       },
       statusLine: 'HTTP/1.1 301 Moved Permanently',
       resourceName: 'webtorrent'

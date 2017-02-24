@@ -284,7 +284,6 @@ function registerForBeforeSendHeaders (session, partition) {
  */
 function registerForHeadersReceived (session, partition) {
   const isPrivate = module.exports.isPrivate(partition)
-  // Note that onBeforeRedirect listener doesn't take a callback
   session.webRequest.onHeadersReceived(function (details, cb) {
     // Using an electron binary which isn't from Brave
     if (shouldIgnoreUrl(details)) {
@@ -303,7 +302,10 @@ function registerForHeadersReceived (session, partition) {
         continue
       }
       if (results.responseHeaders) {
-        cb({ responseHeaders: results.responseHeaders, statusLine: results.statusLine })
+        cb({
+          responseHeaders: results.responseHeaders,
+          statusLine: results.statusLine,
+        })
         return
       }
     }

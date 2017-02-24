@@ -166,7 +166,7 @@ let generateTorrentManifest = () => {
   let cspDirectives = {
     'default-src': '\'self\'',
     // TODO(bridiver) - remove example.com when webtorrent no longer requires it
-    'connect-src': '\'self\' https://example.com',
+    'connect-src': '*', // so .torrent files can be downloaded and displayed
     'media-src': '\'self\' http://localhost:*',
     'form-action': '\'none\'',
     'referrer': 'no-referrer',
@@ -178,7 +178,6 @@ let generateTorrentManifest = () => {
     // allow access to webpack dev server resources
     let devServer = 'localhost:' + process.env.npm_package_config_port
     cspDirectives['default-src'] = '\'self\' http://' + devServer
-    cspDirectives['connect-src'] += ' http://' + devServer + ' ws://' + devServer
     cspDirectives['media-src'] = '\'self\' http://localhost:* http://' + devServer
     cspDirectives['frame-src'] = '\'self\' http://' + devServer
     cspDirectives['style-src'] = '\'self\' \'unsafe-inline\' http://' + devServer
