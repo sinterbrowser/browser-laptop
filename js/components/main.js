@@ -505,15 +505,21 @@ class Main extends ImmutableComponent {
       })
       windowActions.onFocusChanged(true)
     })
-    currentWindow.on('blur', () => {
+    const detachPinnedTabs = (withClose, e) => {
+      withClose && alert('detachPinnedTabs!')
       const pinnedFrames = this.props.windowState.get('frames').filter((frame) => frame.get('pinnedLocation'))
       pinnedFrames.forEach((frame) => {
+        withClose && alert('detachPinnedTab:' + frame.get('key'))
         const webview = document.querySelector(`webview[data-frame-key="${frame.get('key')}"]`)
+        withClose && alert(webview)
         webview.detachGuest()
       })
       appActions.windowBlurred(currentWindow.id)
       windowActions.onFocusChanged(false)
-    })
+      withClose && window.alert('done')
+    }
+    currentWindow.on('blur', detachPinnedTabs.bind(null, false))
+    currentWindow.on('close', detachPinnedTabs.bind(null, false))
     // Full screen as in F11 (not full screen on a video)
     currentWindow.on('enter-full-screen', function (event) {
       windowActions.setWindowFullScreen(true)

@@ -524,7 +524,8 @@ function tabTemplateInit (frameProps) {
         }
       })
 
-    if (windowStore.getState().get('frames').size > 1) {
+    if (windowStore.getState().get('frames').size > 1 &&
+        !frameProps.get('pinnedLocation')) {
       template.push({
         label: locale.translation('detach'),
         click: (item) => {
